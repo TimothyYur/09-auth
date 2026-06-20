@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-import { Roboto } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header/Header';
 import Footer from '@/components/Footer/Footer';
+import { Metadata } from 'next';
+import { Roboto } from 'next/font/google';
 import TanStackProvider from '@/components/TanStackProvider/TanStackProvider';
+import AuthProvider from '@/components/AuthProvider/AuthProvider';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -13,10 +14,10 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: 'Zustand Notes App',
+  title: 'Notehub App',
   description: 'A notes management app built with Next.js, Zustand, and TanStack.',
   openGraph: {
-    title: 'Zustand Notes App',
+    title: 'Notehub App',
     description: 'A notes management app built with Next.js, Zustand, and TanStack.',
     url: 'https://08-zustand-wine-zeta.vercel.app/',
     images: [
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
         url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
         width: 1200,
         height: 630,
-        alt: 'Zustand Notes App',
+        alt: 'Notehub App Preview',
       },
     ],
   },
@@ -39,12 +40,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={roboto.className}>
+      <body className={roboto.variable}>
         <TanStackProvider>
-          <Header />
-          {children}
-          {modal}
-          <Footer />
+          <AuthProvider>
+            <Header />
+            {children}
+            {modal}
+            <Footer />
+          </AuthProvider>
         </TanStackProvider>
       </body>
     </html>

@@ -20,6 +20,12 @@ type NoteStore = {
   clearDraft: () => void;
 };
 
+type DraftState = {
+  draft: Draft;
+  setDraft: (draft: Draft) => void;
+  clearDraft: () => void;
+};
+
 export const useNoteStore = create<NoteStore>()(
   persist(
     set => ({
@@ -33,3 +39,9 @@ export const useNoteStore = create<NoteStore>()(
     }
   )
 );
+
+export const useDraftStore = create<DraftState>(set => ({
+  draft: { title: '', content: '', tag: 'Work' },
+  setDraft: draft => set({ draft }),
+  clearDraft: () => set({ draft: { title: '', content: '', tag: 'Work' } }),
+}));
