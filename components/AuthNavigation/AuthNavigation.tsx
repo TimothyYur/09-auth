@@ -20,6 +20,7 @@ export default function AuthNavigation() {
       router.push('/sign-in');
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
       setIsLoggingOut(false);
     }
   };
