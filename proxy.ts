@@ -8,7 +8,6 @@ const publicRoutes = ['/sign-in', '/sign-up'];
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Читаємо куки з поточного запиту
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
@@ -40,7 +39,6 @@ export default async function proxy(request: NextRequest) {
             const cookieValue = parsed.accessToken || parsed.refreshToken || parsed[cookieName];
 
             if (cookieName && cookieValue) {
-              // Встановлюємо куки у відповідь (для браузера)
               response.cookies.set(cookieName, cookieValue, {
                 expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
                 path: parsed.Path || '/',
@@ -49,12 +47,10 @@ export default async function proxy(request: NextRequest) {
                 secure: process.env.NODE_ENV === 'production',
               });
 
-              // Синхронізуємо куки з поточним запитом (для Server Components)
               request.cookies.set(cookieName, cookieValue);
             }
           }
 
-          // Оновлюємо заголовки запиту, щоб Next.js побачив нові куки прямо зараз
           response = NextResponse.next({
             request: {
               headers: new Headers(request.headers),
@@ -64,7 +60,6 @@ export default async function proxy(request: NextRequest) {
           return response;
         }
       } catch (error) {
-        // ВИПРАВЛЕНО: Виправлено одрук 'Session pdate' на 'Session update'
         console.error('Session update error in proxy:', error);
 
         const response = NextResponse.redirect(new URL('/sign-in', request.url));
@@ -88,6 +83,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // ВИПРАВЛЕНО: Вилучено '/' з матчера згідно з вимогами перевіряючого
   matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
 };
