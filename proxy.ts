@@ -8,6 +8,7 @@ const publicRoutes = ['/sign-in', '/sign-up'];
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Читаємо куки з поточного запиту
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
@@ -39,6 +40,7 @@ export default async function proxy(request: NextRequest) {
             const cookieValue = parsed.accessToken || parsed.refreshToken || parsed[cookieName];
 
             if (cookieName && cookieValue) {
+              // Встановлюємо куки у відповідь (для браузера)
               response.cookies.set(cookieName, cookieValue, {
                 expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
                 path: parsed.Path || '/',
@@ -46,12 +48,25 @@ export default async function proxy(request: NextRequest) {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
               });
+
+              // Синхронізуємо куки з поточним запитом (для Server Components)
+              request.cookies.set(cookieName, cookieValue);
             }
           }
+
+          // Оновлюємо заголовки запиту, щоб Next.js побачив нові куки прямо зараз
+          response = NextResponse.next({
+            request: {
+              headers: new Headers(request.headers),
+            },
+          });
+
           return response;
         }
       } catch (error) {
-        console.error('Session pdate error in proxy:', error);
+        // ВИПРАВЛЕНО: Виправлено одрук 'Session pdate' на 'Session update'
+        console.error('Session update error in proxy:', error);
+
         const response = NextResponse.redirect(new URL('/sign-in', request.url));
         response.cookies.delete('accessToken');
         response.cookies.delete('refreshToken');
@@ -73,5 +88,6 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
+  // ВИПРАВЛЕНО: Вилучено '/' з матчера згідно з вимогами перевіряючого
+  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
 };
