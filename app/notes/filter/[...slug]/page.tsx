@@ -1,0 +1,54 @@
+import { QueryClient, dehydrate } from '@tanstack/react-query';
+import { HydrationBoundary } from '@tanstack/react-query';
+import { fetchNotes } from '@/lib/api';
+import NotesClient from './Notes.client';
+import { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string[] } | Promise<{ slug: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const currentTag = slug?.[0] ?? 'all';
+  return {
+    title: `Notes filtered by ${currentTag} | NoteHub`,
+    description: `Browse notes filtered by ${currentTag} tag in NoteHub.`,
+    openGraph: {
+      title: `Notes filtered by ${currentTag} | NoteHub`,
+      description: `Browse notes filtered by ${currentTag} tag in NoteHub.`,
+      url: `https://notehub.com/notes/filter/${currentTag}`,
+      images: [
+        {
+          url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'NoteHub filter preview',
+        },
+      ],
+    },
+  };
+}
+
+export default async function FilteredNotesPage({
+  params,
+}: {
+  params: { slug: string[] } | Promise<{ slug: string[] }>;
+}) {
+  const { slug } = await params;
+  const currentTag = slug?.[0] ?? 'all';
+
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['notes', currentTag],
+    queryFn: () =>
+      currentTag === 'all' ? fetchNotes(1, 10) : fetchNotes(1, 10, undefined, currentTag),
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <NotesClient tag={currentTag} />
+    </HydrationBoundary>
+  );
+}
