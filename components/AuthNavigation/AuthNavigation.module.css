@@ -1,36 +1,43 @@
 .userEmail {
-    color: white;
-    margin-right: 0.5rem;
-    font-size: 0.9rem;
+  color: white;
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .logoutButton {
-    background: transparent;
-    border: 1px solid white;
-    color: white;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .logoutButton:hover {
-    background-color: white;
-    color: #333;
+  background-color: white;
+  color: #333;
+}
+
+.logoutButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .navigationItem {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .navigationLink {
-    text-decoration: none;
-    color: white;
-    font-size: 1rem;
+  text-decoration: none;
+  color: white;
+  font-size: 1rem;
 }
 
 .navigationLink:hover {
-    color: #ddd;
+  color: #ddd;
 }

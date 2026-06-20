@@ -13,8 +13,8 @@ export default function Pagination({ pageCount, currentPage, onPageChange }: Pag
       pageCount={pageCount}
       pageRangeDisplayed={5}
       marginPagesDisplayed={1}
-      forcePage={currentPage}
-      onPageChange={event => onPageChange(event.selected)}
+      forcePage={currentPage - 1}
+      onPageChange={event => onPageChange(event.selected + 1)}
       containerClassName={css.pagination}
       activeClassName={css.active}
       nextLabel="→"
