@@ -38,6 +38,18 @@ function parseCookieAttributes(cookieStr: string): {
   return { name, value, options };
 }
 
+function applySetCookieHeaders(response: NextResponse, cookieArray: string[]) {
+  for (const cookieStr of cookieArray) {
+    const { name, value, options } = parseCookieAttributes(cookieStr);
+    const cleanOptions: CookieOptions = {};
+    if (options.path) cleanOptions.path = options.path;
+    if (options.maxAge) cleanOptions.maxAge = options.maxAge;
+    if (options.expires) cleanOptions.expires = options.expires;
+
+    response.cookies.set(name, value, cleanOptions);
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const cookieStore = await cookies();
@@ -47,43 +59,28 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPrivateRoute = privateRoutes.some(route => pathname.startsWith(route));
 
-  if (!accessToken) {
-    if (refreshToken) {
-      const data = await checkSessionServer();
-      const setCookie = data.headers['set-cookie'];
+  if (!accessToken && refreshToken) {
+    const data = await checkSessionServer();
+    const setCookie = data.headers['set-cookie'];
 
-      if (setCookie) {
-        const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
-        for (const cookieStr of cookieArray) {
-          const { name, value, options } = parseCookieAttributes(cookieStr);
+    if (setCookie) {
+      const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
 
-          const cleanOptions: CookieOptions = {};
-          if (options.path) cleanOptions.path = options.path;
-          if (options.maxAge) cleanOptions.maxAge = options.maxAge;
-          if (options.expires) cleanOptions.expires = options.expires;
+      if (isPublicRoute) {
+        const response = NextResponse.redirect(new URL('/', request.url));
+        applySetCookieHeaders(response, cookieArray);
+        return response;
+      }
 
-          if (name === 'accessToken') {
-            cookieStore.set('accessToken', value, cleanOptions);
-          } else if (name === 'refreshToken') {
-            cookieStore.set('refreshToken', value, cleanOptions);
-          }
-        }
-        if (isPublicRoute) {
-          return NextResponse.redirect(new URL('/', request.url), {
-            headers: {
-              Cookie: cookieStore.toString(),
-            },
-          });
-        }
-        if (isPrivateRoute) {
-          return NextResponse.next({
-            headers: {
-              Cookie: cookieStore.toString(),
-            },
-          });
-        }
+      if (isPrivateRoute) {
+        const response = NextResponse.next();
+        applySetCookieHeaders(response, cookieArray);
+        return response;
       }
     }
+  }
+
+  if (!accessToken) {
     if (isPublicRoute) {
       return NextResponse.next();
     }
@@ -96,9 +93,12 @@ export async function proxy(request: NextRequest) {
   if (isPublicRoute) {
     return NextResponse.redirect(new URL('/', request.url));
   }
+
   if (isPrivateRoute) {
     return NextResponse.next();
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
