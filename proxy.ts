@@ -18,13 +18,17 @@ function parseCookieAttributes(cookieStr: string): {
 } {
   const parts = cookieStr.split(';');
   const [nameValue] = parts;
-  const [name, value] = nameValue.trim().split('=');
+  const equalsIndex = nameValue.indexOf('=');
+  const name = nameValue.slice(0, equalsIndex).trim();
+  const value = nameValue.slice(equalsIndex + 1).trim();
 
   const options: CookieOptions = {};
 
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i].trim();
-    const [key, val] = part.split('=');
+    const index = part.indexOf('=');
+    const key = index === -1 ? part.trim() : part.slice(0, index).trim();
+    const val = index === -1 ? '' : part.slice(index + 1).trim();
 
     if (key.toLowerCase() === 'path' && val) {
       options.path = val;
@@ -50,14 +54,22 @@ function applySetCookieHeaders(response: NextResponse, cookieArray: string[]) {
   }
 }
 
+function isExactPublicRoute(pathname: string) {
+  return publicRoutes.includes(pathname);
+}
+
+function isPrivateRoutePath(pathname: string) {
+  return privateRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   const refreshToken = cookieStore.get('refreshToken')?.value;
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const isPrivateRoute = privateRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = isExactPublicRoute(pathname);
+  const isPrivateRoute = isPrivateRoutePath(pathname);
 
   if (!accessToken && refreshToken) {
     const data = await checkSessionServer();
