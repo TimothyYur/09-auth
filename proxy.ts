@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { parse } from 'cookie';
 import { checkSessionServer } from './lib/api/serverApi';
 
 const privateRoutes = ['/profile', '/notes'];
 const publicRoutes = ['/sign-in', '/sign-up'];
+
+interface CookieOptions {
+  path?: string;
+  maxAge?: number;
+  expires?: Date;
+}
+
+function parseCookieAttributes(cookieStr: string): {
+  name: string;
+  value: string;
+  options: CookieOptions;
+} {
+  const parts = cookieStr.split(';');
+  const [nameValue] = parts;
+  const [name, value] = nameValue.trim().split('=');
+
+  const options: CookieOptions = {};
+
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i].trim();
+    const [key, val] = part.split('=');
+
+    if (key.toLowerCase() === 'path' && val) {
+      options.path = val;
+    } else if (key.toLowerCase() === 'max-age' && val) {
+      options.maxAge = parseInt(val, 10);
+    } else if (key.toLowerCase() === 'expires' && val) {
+      options.expires = new Date(val);
+    }
+  }
+
+  return { name, value, options };
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -23,14 +55,18 @@ export async function proxy(request: NextRequest) {
       if (setCookie) {
         const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
         for (const cookieStr of cookieArray) {
-          const parsed = parse(cookieStr);
-          const options = {
-            expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
-            path: parsed.Path,
-            maxAge: Number(parsed['Max-Age']),
-          };
-          if (parsed.accessToken) cookieStore.set('accessToken', parsed.accessToken, options);
-          if (parsed.refreshToken) cookieStore.set('refreshToken', parsed.refreshToken, options);
+          const { name, value, options } = parseCookieAttributes(cookieStr);
+
+          const cleanOptions: CookieOptions = {};
+          if (options.path) cleanOptions.path = options.path;
+          if (options.maxAge) cleanOptions.maxAge = options.maxAge;
+          if (options.expires) cleanOptions.expires = options.expires;
+
+          if (name === 'accessToken') {
+            cookieStore.set('accessToken', value, cleanOptions);
+          } else if (name === 'refreshToken') {
+            cookieStore.set('refreshToken', value, cleanOptions);
+          }
         }
         if (isPublicRoute) {
           return NextResponse.redirect(new URL('/', request.url), {
